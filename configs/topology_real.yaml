@@ -1,0 +1,47 @@
+# Concrete run configuration for the KJTHT-SC-L-1RB1-1 panel.
+#
+# Stage-1 source: results_tuning/KJTHT-SC-L-1RB1-1_s1_TUT_base_st256_{prob,mask}.npy
+# (RIFT-B / TUT_base, scale 1.0, 256 px stride, no TTA), hardlinked into
+# data/real/ so the adapter sees exactly one unambiguous variant per image.
+#
+# Everything not listed here falls back to the defaults in topology_classifier/config.py.
+
+data:
+  images_dir: data/real/images
+  rift_prob_dir: data/real/rift
+  rift_mask_dir: data/real/rift
+  labels_dir: data/real/labels
+  edge_annotations_csv: null
+  panel_mapping_csv: null          # one panel only: grouped CV is not possible yet
+  output_dir: outputs/topology_real
+  image_glob: "*.jpg,*.png"
+
+classes:
+  enable_other_line: true
+
+preprocessing:
+  high_threshold: 0.60
+  low_threshold: 0.25
+  minimum_skeleton_length: 10
+  enable_gap_repair: false
+  save_debug_masks: false          # 9147x4374 debug PNGs are expensive
+
+graph:
+  connectivity: 8
+  junction_merge_radius: 2
+  border_margin: 5
+  local_radius_pixels: 256
+
+appearance:
+  enable: true
+  max_samples_per_edge: 64         # dense craquelure: keep the sampling cost bounded
+
+model:
+  baseline_type: xgboost
+  minimum_prediction_confidence: 0.60
+  random_seed: 42
+
+runtime:
+  cache_dir: outputs/topology_real/cache
+  enable_cache: true
+  log_level: INFO

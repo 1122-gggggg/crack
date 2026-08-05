@@ -1,0 +1,92 @@
+# Stage-2 topology classifier configuration.
+# Every threshold used by topology_classifier lives here; nothing is hard-coded.
+# Changing any value changes config_hash() and therefore invalidates the cache.
+
+data:
+  images_dir: data/images
+  rift_prob_dir: data/rift_prob    # *_prob.npy (float32 0..1) written by infer_tiles.py
+  rift_mask_dir: data/rift_mask    # *_mask.npy (uint8 0/1) written by infer_tiles.py
+  labels_dir: data/labels
+  edge_annotations_csv: null      # CSV produced by `export-edge-review` after human labelling
+  panel_mapping_csv: null         # image_id,panel_id -- required for honest grouped CV
+  output_dir: outputs/topology
+  image_glob: "*.png,*.jpg,*.jpeg,*.tif,*.tiff"
+
+classes:
+  background: 0
+  crack: 1
+  craquelure: 2
+  other_line: 3
+  ignore: 255
+  enable_other_line: true
+
+preprocessing:
+  high_threshold: 0.60
+  low_threshold: 0.25
+  binary_mask_threshold: 127      # only used when a 0..255 mask image is the sole input
+  minimum_skeleton_length: 10
+  minimum_component_confidence: 0.0
+  minimum_bbox_diagonal: 0.0
+  minimum_elongation: 0.0
+  enable_gap_repair: false        # topology-changing; enable deliberately
+  max_gap_pixels: 4
+  max_angle_difference_deg: 25.0
+  minimum_gap_confidence: 0.20
+  gap_tangent_window: 7
+  save_debug_masks: true
+
+graph:
+  connectivity: 8
+  junction_merge_radius: 2
+  border_margin: 5
+  orientation_bins: 12
+  local_graph_hops: 2
+  local_radius_pixels: 256
+  minimum_enclosed_area: 16
+  tolerant_face_closing_radius: 1
+  curvature_resample_step: 5
+  width_sample_stride: 1
+
+appearance:
+  enable: true
+  side_offset_extra_px: 2.0
+  patch_radius_px: 7
+  max_samples_per_edge: 128
+  enable_rift_encoder_features: false
+
+labels:
+  edge_label_purity: 0.80
+  junction_ignore_radius: 3
+  label_sample_uses_width: true
+
+model:
+  baseline_type: xgboost          # xgboost | hist_gradient_boosting | random_forest
+  minimum_prediction_confidence: 0.60
+  random_seed: 42
+  junction_conflict_policy: uncertain
+
+training:
+  n_splits: 5
+  group_column: panel_id
+  class_weighting: balanced
+  test_size: 0.25
+  max_depth: 6
+  n_estimators: 400
+  learning_rate: 0.08
+
+gnn:
+  hidden_dim: 96
+  num_layers: 4
+  dropout: 0.2
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  epochs: 100
+  use_appearance_features: true
+  aux_graph_loss_weight: 0.0
+  focal_gamma: 0.0
+
+runtime:
+  cache_dir: outputs/topology/cache
+  enable_cache: true
+  log_level: INFO
+  errors_filename: errors.jsonl
